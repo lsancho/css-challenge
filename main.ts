@@ -33,6 +33,28 @@ export class FriendSuggester {
   }
 
   getFriendsSuggestions(userId: number, k: number): number[] {
-    return [];
+    const friends = this.facebookClient.getFriends(userId);
+    const friendsOfFriends = new Map<number, number[]>();
+
+    for (const friend of friends) {
+      const fof = this.facebookClient.getFriends(friend);
+      friendsOfFriends.set(friend, fof);
+    }
+
+    // console.log({ friendsOfFriends });
+    const count = new Map<number, number>();
+    for (const [k, v] of Array.from(friendsOfFriends.entries())) {
+      for (const m of v) {
+        if (!friends.includes(m) && m !== userId) {
+          const current = count.get(m) || 0;
+          count.set(m, current + 1);
+        }
+      }
+    }
+
+    // console.log({ count });
+    const ordered = Array.from(count.entries()).sort((a, b) => b[1] - a[1]);
+
+    return ordered.map((o) => o[0]).slice(0, k);
   }
 }
